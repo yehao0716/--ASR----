@@ -1,0 +1,47 @@
+# Core ML dependencies
+torch>=2.0.0
+transformers>=4.46.1
+accelerate>=0.26.0
+sentencepiece>=0.1.99
+protobuf>=3.20.0
+safetensors>=0.4.0
+tokenizers>=0.15.0  # transformers 的依赖
+regex>=2023.0.0     # transformers 的依赖
+sacremoses>=0.0.53  # transformers 的依赖
+
+# Audio processing
+moviepy>=1.0.3
+pydub>=0.25.1
+librosa>=0.10.1
+soundfile>=0.12.1
+audioread>=3.0.0    # librosa 的依赖
+ffmpeg-python>=0.2.0  # 音视频处理依赖
+
+# Text processing
+jieba>=0.42.1
+
+# Async and concurrent
+aiohttp>=3.8.1
+aiofiles>=0.8.0
+asyncio>=3.4.3
+
+# Logging and monitoring
+python-json-logger>=2.0.7
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.18.0
+pytest-cov>=3.0.0
+pytest-mock==3.12.0
+
+# HTTP and networking
+requests>=2.27.1
+urllib3>=2.0.0      # requests 的依赖
+
+# Scientific computing
+numpy>=1.21.0
+scipy>=1.11.0       # 科学计算依赖
+
+# System utilities
+pathlib>=1.0.1
+tqdm>=4.65.0        # 进度条
