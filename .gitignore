@@ -28,6 +28,9 @@ __pycache__/
 .coverage
 htmlcov/
 
+# 测试数据
+test_data/
+
 # 构建和分发
 dist/
 build/
