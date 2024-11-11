@@ -29,6 +29,8 @@ import librosa
 import jieba
 import re
 import shutil
+from pathlib import Path
+from typing import Union
 
 # 使用已经存在的logger
 logger = logging.getLogger('VideoASR')
@@ -69,7 +71,7 @@ class VideoSubtitleExtractor:
                     Config.MODEL_NAME,
                     proxies=proxies
                 )
-                # 保存模型到本地
+                # 保存型到本地
                 self.model.save_pretrained(model_path)
                 self.processor.save_pretrained(model_path)
                 logger.info("模型下载完成")
@@ -192,21 +194,44 @@ class VideoSubtitleExtractor:
             logger.debug(f"音频识别完成: {audio_path}")
             return result["text"]
         except Exception as e:
-            logger.error(f"语识别失败: {str(e)}")
+            logger.error(f"语识别败: {str(e)}")
             return None
 
     async def download_video_async(self, url, local_path):
         """异步下载视频"""
         return await download_video(url, local_path)
 
-    async def extract_audio_async(self, video_path, output_path):
+    async def extract_audio_async(self, video_path: Union[str, Path], audio_path: Union[str, Path]) -> bool:
         """异步提取音频"""
-        return await asyncio.get_event_loop().run_in_executor(
-            self.thread_pool,
-            self.extract_audio,
-            video_path,
-            output_path
-        )
+        try:
+            # 确保输出目录存在
+            output_dir = Path(audio_path).parent
+            if not output_dir.exists():
+                logger.error(f"输出目录不存在: {output_dir}")
+                return False
+                
+            video_path_str = str(video_path)
+            audio_path_str = str(audio_path)
+            
+            video = VideoFileClip(video_path_str)
+            if video.audio is None:
+                logger.error("视频文件没有音轨")
+                return False
+                
+            try:
+                video.audio.write_audiofile(audio_path_str)
+                return True
+            finally:
+                video.close()
+        except Exception as e:
+            logger.error(f"音频提取失败: {str(e)}")
+            # 清理临时文件
+            temp_path = Path(f"{audio_path_str}.temp")
+            if temp_path.exists():
+                temp_path.unlink()
+            if Path(audio_path_str).exists():
+                Path(audio_path_str).unlink()
+            return False
 
     async def transcribe_audio_async(self, audio_path):
         """步转换音频为文字"""
@@ -264,7 +289,7 @@ class VideoSubtitleExtractor:
 class TextPostProcessor:
     def __init__(self, proxy=None):
         """初始化后处理器"""
-        # 初始化错别字修正字典
+        # 初始化错别字修正字
         self.corrections = {
             # 常见错误（优先级最高）
             '特别值的': '特别值得',  # 添加完整短语
@@ -377,15 +402,16 @@ class TextPostProcessor:
         try:
             logger.info(f"使用模型处理文本: '{text}'")
             
-            # 1. 保护英文单词
+            # 保护英文单词和数字
             protected_words = {}
             def protect_word(match):
                 word = match.group(0)
-                token = f"__ENG_{len(protected_words)}__"
+                token = f"__PROTECTED_{len(protected_words)}__"
                 protected_words[token] = word
                 return token
                 
-            text = re.sub(r'\b[a-zA-Z]+\b', protect_word, text)
+            # 保护英文单词（包括前后的空格）
+            text = re.sub(r'(\s*[a-zA-Z]+\s*)', protect_word, text)
             
             # 2. 优化生成配置
             generation_config = GenerationConfig(
@@ -429,7 +455,7 @@ class TextPostProcessor:
             result = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
             logger.info(f"模型处理结果: '{result}'")
             
-            # 6. 恢复英文单词
+            # 恢复保护的单词
             for token, word in protected_words.items():
                 result = result.replace(token, word)
                 
@@ -445,19 +471,16 @@ class TextPostProcessor:
             return text
             
         try:
-            # 1. 保护英文单词和关键词组
+            # 保护英文单词和数字
             protected_tokens = {}
-            def protect_token(token):
-                key = f"__TOKEN_{len(protected_tokens)}__"
-                protected_tokens[key] = token
-                return key
+            def protect_token(match):
+                word = match.group(0)
+                token = f"__TOKEN_{len(protected_tokens)}__"
+                protected_tokens[token] = word
+                return token
                 
-            # 保护英文单词
-            text = re.sub(r'\b[a-zA-Z]+\b', lambda m: protect_token(m.group(0)), str(text))
-            # 保护关键词组
-            keywords = ['今天', '但是还是', '要上班', '好累啊']
-            for keyword in keywords:
-                text = text.replace(keyword, protect_token(keyword))
+            # 保护英文单词（包括前后的空格）
+            text = re.sub(r'(\s*[a-zA-Z]+\s*)', protect_token, text)
             
             # 2. 错别字修正
             sorted_corrections = sorted(
@@ -475,7 +498,7 @@ class TextPostProcessor:
             # 4. 标点处理规则（按优先级排序）
             patterns = [
                 # 1. 处理感叹和问句（最高优先级）
-                (r'([啊呀哇��])([^。！？]|$)', r'\1！'),
+                (r'([啊呀哇])([^。！？]|$)', r'\1！'),
                 (r'([吗么呢])([^，。！？]|$)', r'\1？'),
                 
                 # 2. 处理连接词（第二优先级）
@@ -501,12 +524,9 @@ class TextPostProcessor:
             for token, original in protected_tokens.items():
                 text = text.replace(token, original)
             
-            # 6. 确保句子结尾有标点
-            if not text.endswith(("。", "！", "？")):
-                text = text + "。"
-            
-            # 7. 最后清理可能产生的重复标点
-            text = re.sub(r'([，。！？])\1+', r'\1', text)
+            # 确保英文单词前后有正确的空格和标点
+            text = re.sub(r'([a-zA-Z])([，。！？])', r'\1 \2', text)
+            text = re.sub(r'([，。！？])([a-zA-Z])', r'\1 \2', text)
             
             return text
             

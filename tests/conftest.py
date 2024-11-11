@@ -7,6 +7,12 @@ import time
 import subprocess
 from pathlib import Path
 from video_processor import VideoSubtitleExtractor
+import sys
+
+# 添加项目根目录到 Python 路径
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from config import Config  # 添加这行导入
 
 logger = logging.getLogger('VideoASR')
 

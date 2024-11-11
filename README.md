@@ -31,7 +31,7 @@ graph TD
     B -->|返回结果| A
 ```
 
-## 处理流程
+## 处理流��
 ```mermaid
 sequenceDiagram
     participant Client as 客户端
@@ -370,7 +370,7 @@ sequenceDiagram
 
 ### 4. 关键优化技术
 
-#### 4.1 注意力机制优化
+#### 4.1 注意力机制优��
 - **稀疏注意力**: 减少计算复杂度
 - **局部注意力窗口**: 处理长序列
 - **交叉注意力对齐**: 音频-文本对齐
@@ -439,3 +439,16 @@ A: 考虑使用 GPU 加速，调整分段大小
 ## 许可证
 
 [添加许可证信息]
+
+## 安装说明
+
+1. 确保你的系统已安装 Python 3.x
+2. 克隆或下载本项目到本地
+3. 使用以下命令安装依赖：   ```bash
+   # 方法1：直接安装
+   pip install -r requirements.txt
+
+   # 如果上述命令失败，请尝试：
+   python -m pip install -r requirements.txt   ```
+
+注意：如果安装过程中遇到编码错误，请确保 requirements.txt 文件使用 UTF-8 编码保存。
