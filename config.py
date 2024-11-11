@@ -42,6 +42,9 @@ class Config:
     DOWNLOAD_TIMEOUT = 1800  # 下载超时时间（秒）
     CONNECT_TIMEOUT = 30  # 连接超时时间（秒）
     READ_TIMEOUT = 300  # 读取超时时间（秒）
+    
+    # 文本处理模式：'full' 或 'punctuation'
+    TEXT_PROCESS_MODE = 'full'
 
     @classmethod
     def setup(cls):

@@ -8,11 +8,13 @@ import subprocess
 from pathlib import Path
 from video_processor import VideoSubtitleExtractor
 import sys
-
 # 添加项目根目录到 Python 路径
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
-from config import Config  # 添加这行导入
+# 现在可以导入项目模块了
+from video_processor import VideoSubtitleExtractor
+from config import Config
 
 logger = logging.getLogger('VideoASR')
 
